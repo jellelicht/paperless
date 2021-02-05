@@ -44,7 +44,7 @@
        ((not (= (length (elt vctr 2)) 0))
 	(org-store-link-props
 	 :type "file"
-	 :link (concat (elt vctr 2) "/" (elt vctr 1))))
+	 :link (concat "file:" (elt vctr 2) "/" (elt vctr 1))))
        (t (error "Set destination directory before storing link")))))))
 
 (provide 'org-paperless)

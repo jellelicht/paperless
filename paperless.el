@@ -140,12 +140,30 @@
   "Scan target directory hierarchy"
   (interactive)
   (message "Scanning directories under %s" paperless-root-directory)
-  (defun relpath (s)
-    (f-relative s paperless-root-directory))
+  (defun maybe-relpath (s)
+    (save-match-data
+	      (if (string-match (concat "^" (regexp-quote
+					     (expand-file-name
+					      (file-name-as-directory
+					       default-directory))))
+				(expand-file-name s))
+		  ;; We are linking a file with relative path name.
+		  (progn
+		    (message "true")
+		    (substring (expand-file-name s)
+			       (match-end 0)))
+		(progn
+		  (message (concat "^" (regexp-quote
+					     (expand-file-name
+					      (file-name-as-directory
+					       default-directory)))))
+		  (message (expand-file-name s))
+		  (message "false")
+		  (abbreviate-file-name (expand-file-name s))))))
   ;; Recursively build the list of destination directories, but don't
   ;; include hidden directories.
   (setq paperless--directory-list
-      (mapcar 'relpath
+      (mapcar 'maybe-relpath
 	(cl-remove-if
 	 (lambda (s)
 	   (s-contains? "/." s))
@@ -171,8 +189,8 @@
 (defun paperless-rename ()
   "Rename the current document."
   (interactive)
-  (let* ((new-source (ido-completing-read "Document source: " paperless--source-list))
-         (new-type (ido-completing-read "Document type: " paperless--type-list))
+  (let* ((new-source (completing-read "Document source: " paperless--source-list))
+         (new-type (completing-read "Document type: " paperless--type-list))
          (new-date (org-read-date))
          (new-name (concat new-source "_" new-type "_" new-date))
          (vctr (cadr (assoc (tabulated-list-get-id) paperless--table-contents))))
@@ -193,7 +211,7 @@
 		(progn
 		  (if (string-equal (elt vctr 2) "[ DELETE ]")
 		      (move-file-to-trash (car i))
-		    (rename-file (car i) (concat (f-canonical paperless-root-directory) "/" (elt vctr 2) "/" (elt vctr 1))))
+		    (rename-file (car i) (concat (elt vctr 2) "/" (elt vctr 1))))
 		  (car i)))))
 	  paperless--table-contents)))
     (mapc
@@ -243,6 +261,7 @@
   (tabulated-list-init-header))
 
 (defun  paperless-scan ()
+  (interactive)
   (paperless-scan-directories)
   (paperless-scan-filenames))
 
